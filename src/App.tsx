@@ -110,7 +110,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-50">
-      <div className="max-w-2xl mx-auto px-4 py-8 pb-40">
+      <div className="max-w-2xl mx-auto px-4 py-8">
         <header className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
@@ -173,6 +173,13 @@ export default function App() {
         </header>
 
         <Dashboard tasks={tasks} members={members} isAdmin={isAdmin} />
+
+        <InboxBar
+          onSubmitText={handleInboxText}
+          onSubmitImage={handleInboxImage}
+          processing={decompose.step === 'processing'}
+        />
+
         <FilterBar filter={filter} onChange={setFilter} allTags={allTags} members={isAdmin ? members : []} />
 
         {tasksLoading ? (
@@ -200,12 +207,6 @@ export default function App() {
           onClose={closeForm}
         />
       )}
-
-      <InboxBar
-        onSubmitText={handleInboxText}
-        onSubmitImage={handleInboxImage}
-        processing={decompose.step === 'processing'}
-      />
 
       {decompose.step === 'preview' && decompose.result && (
         <DecomposePreview

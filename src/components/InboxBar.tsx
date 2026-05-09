@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Mic, MicOff, Image, Send, Loader2, X } from 'lucide-react';
+import { Mic, MicOff, Image, Send, Loader2, X, Sparkles, ChevronDown } from 'lucide-react';
 
 interface Props {
   onSubmitText: (text: string) => void;
@@ -7,13 +7,11 @@ interface Props {
   processing: boolean;
 }
 
-type InputMode = 'text' | 'voice' | 'image';
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyRecognition = any;
 
 export function InboxBar({ onSubmitText, onSubmitImage, processing }: Props) {
-  const [mode, setMode] = useState<InputMode>('text');
+  const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -41,7 +39,6 @@ export function InboxBar({ onSubmitText, onSubmitImage, processing }: Props) {
       const transcript = e.results[0][0].transcript;
       setText(transcript);
       setListening(false);
-      setMode('text');
     };
     rec.onerror = () => setListening(false);
     rec.onend = () => setListening(false);
@@ -74,25 +71,34 @@ export function InboxBar({ onSubmitText, onSubmitImage, processing }: Props) {
     setImageMeta(null);
   };
 
-  const clearImage = () => {
-    setImagePreview(null);
-    setImageMeta(null);
-  };
-
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center pb-4 px-4 pointer-events-none">
-      <div className="w-full max-w-2xl pointer-events-auto">
-        <div className="bg-white rounded-3xl shadow-2xl shadow-violet-100 border border-gray-100 p-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-violet-400 inline-block" />
-            AI でタスクを整理
-          </p>
+    <div className="mb-4">
+      {/* トグルボタン */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-violet-200 hover:bg-violet-50/50 transition-all group"
+      >
+        <div className="flex items-center gap-2 text-sm font-medium text-gray-600 group-hover:text-violet-600">
+          <Sparkles size={15} className="text-violet-400" />
+          AI でタスクを整理
+        </div>
+        <ChevronDown
+          size={15}
+          className={`text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
 
+      {/* 入力エリア（展開時のみ表示） */}
+      {open && (
+        <div className="mt-2 bg-white rounded-2xl border border-violet-100 shadow-sm p-4">
           {/* 画像プレビュー */}
           {imagePreview && (
             <div className="relative mb-3">
               <img src={imagePreview} alt="preview" className="w-full max-h-40 object-contain rounded-xl border border-gray-100" />
-              <button onClick={clearImage} className="absolute top-1 right-1 bg-white rounded-full p-0.5 shadow text-gray-500 hover:text-red-500">
+              <button
+                onClick={() => { setImagePreview(null); setImageMeta(null); }}
+                className="absolute top-1 right-1 bg-white rounded-full p-0.5 shadow text-gray-500 hover:text-red-500"
+              >
                 <X size={14} />
               </button>
             </div>
@@ -107,8 +113,8 @@ export function InboxBar({ onSubmitText, onSubmitImage, processing }: Props) {
           )}
 
           <div className="flex gap-2">
-            {/* テキスト入力 */}
             <textarea
+              autoFocus
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleTextSubmit(); } }}
@@ -119,7 +125,6 @@ export function InboxBar({ onSubmitText, onSubmitImage, processing }: Props) {
             />
 
             <div className="flex flex-col gap-1.5">
-              {/* 音声 */}
               <button
                 onClick={listening ? stopVoice : startVoice}
                 className={`p-2.5 rounded-xl transition-colors ${
@@ -132,7 +137,6 @@ export function InboxBar({ onSubmitText, onSubmitImage, processing }: Props) {
                 {listening ? <MicOff size={16} /> : <Mic size={16} />}
               </button>
 
-              {/* 画像 */}
               <button
                 onClick={() => fileRef.current?.click()}
                 className="p-2.5 rounded-xl bg-gray-100 text-gray-500 hover:bg-violet-100 hover:text-violet-600 transition-colors"
@@ -148,7 +152,6 @@ export function InboxBar({ onSubmitText, onSubmitImage, processing }: Props) {
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageFile(f); e.target.value = ''; }}
               />
 
-              {/* 送信 */}
               <button
                 onClick={imageMeta ? handleImageSubmit : handleTextSubmit}
                 disabled={processing || (!text.trim() && !imageMeta)}
@@ -160,9 +163,9 @@ export function InboxBar({ onSubmitText, onSubmitImage, processing }: Props) {
             </div>
           </div>
 
-          {mode && <p className="text-xs text-gray-400 mt-2 text-right">{text.length}/1000</p>}
+          <p className="text-xs text-gray-400 mt-2 text-right">{text.length}/1000</p>
         </div>
-      </div>
+      )}
     </div>
   );
 }

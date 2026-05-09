@@ -38,9 +38,9 @@ export async function callClaude(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      systemInstruction: { parts: [{ text: systemPrompt }] },
+      system_instruction: { parts: [{ text: systemPrompt }] },
       contents: [{ role: 'user', parts }],
-      generationConfig: { maxOutputTokens: 1024 },
+      generationConfig: { maxOutputTokens: 2048 },
     }),
   });
 

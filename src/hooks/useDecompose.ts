@@ -36,8 +36,9 @@ export function useDecompose(): UseDecomposeReturn {
     try {
       const r = await decomposeText(input, existingTags);
       handleResult(r);
-    } catch {
-      setErrorMessage('AI処理に失敗しました。手動でタスクを入力してください。');
+    } catch (e) {
+      console.error('[Decompose] text error:', e);
+      setErrorMessage(`AI処理に失敗しました: ${e instanceof Error ? e.message : String(e)}`);
       setStep('error');
     }
   };
@@ -48,8 +49,9 @@ export function useDecompose(): UseDecomposeReturn {
     try {
       const r = await decomposeImage(base64, mediaType, existingTags);
       handleResult(r);
-    } catch {
-      setErrorMessage('画像の処理に失敗しました。手動でタスクを入力してください。');
+    } catch (e) {
+      console.error('[Decompose] image error:', e);
+      setErrorMessage(`画像処理に失敗しました: ${e instanceof Error ? e.message : String(e)}`);
       setStep('error');
     }
   };

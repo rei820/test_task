@@ -1,4 +1,4 @@
-const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 export interface ImageContent {
   type: 'image';
@@ -16,35 +16,41 @@ export async function callClaude(
   systemPrompt: string,
   userContent: string | ContentBlock[],
 ): Promise<string> {
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY as string;
-  if (!apiKey) throw new Error('VITE_ANTHROPIC_API_KEY is not set');
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string;
+  if (!apiKey) throw new Error('VITE_GEMINI_API_KEY is not set');
 
-  const content: ContentBlock[] =
+  const parts: object[] =
     typeof userContent === 'string'
-      ? [{ type: 'text', text: userContent }]
-      : userContent;
+      ? [{ text: userContent }]
+      : userContent.map((block) => {
+          if (block.type === 'image') {
+            return {
+              inlineData: {
+                mimeType: block.source.media_type,
+                data: block.source.data,
+              },
+            };
+          }
+          return { text: block.text };
+        });
 
-  const res = await fetch(ANTHROPIC_API_URL, {
+  const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: [{ role: 'user', content }],
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: 'user', parts }],
+      generationConfig: { maxOutputTokens: 1024 },
     }),
   });
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Claude API error ${res.status}: ${err}`);
+    throw new Error(`Gemini API error ${res.status}: ${err}`);
   }
 
-  const json = await res.json() as { content: { type: string; text: string }[] };
-  return json.content.find((b) => b.type === 'text')?.text ?? '';
+  const json = await res.json() as {
+    candidates: { content: { parts: { text: string }[] } }[];
+  };
+  return json.candidates[0]?.content?.parts[0]?.text ?? '';
 }

@@ -6,6 +6,7 @@ function toTask(row: {
   id: string; title: string; description: string | null; status: string;
   priority: string; tags: string[]; due_date: string | null; archived: boolean;
   assignee_id: string | null; created_at: string; updated_at: string;
+  purpose: string | null; estimated_minutes: number | null;
 }): Task {
   return {
     id: row.id,
@@ -19,6 +20,8 @@ function toTask(row: {
     assigneeId: row.assignee_id ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    purpose: row.purpose ?? undefined,
+    estimatedMinutes: row.estimated_minutes ?? undefined,
   };
 }
 
@@ -54,6 +57,8 @@ export function useTasks() {
     tags: string[];
     dueDate?: string;
     assigneeId?: string;
+    purpose?: string;
+    estimatedMinutes?: number;
   }): Promise<Task> => {
     const { data: row, error } = await supabase.from('tasks').insert({
       title: data.title,
@@ -64,6 +69,8 @@ export function useTasks() {
       due_date: data.dueDate ?? null,
       archived: false,
       assignee_id: data.assigneeId ?? null,
+      purpose: data.purpose ?? null,
+      estimated_minutes: data.estimatedMinutes ?? null,
     }).select().single();
     if (error || !row) throw error;
     return toTask(row);
@@ -79,6 +86,8 @@ export function useTasks() {
       ...(data.dueDate !== undefined && { due_date: data.dueDate ?? null }),
       ...(data.archived !== undefined && { archived: data.archived }),
       ...(data.assigneeId !== undefined && { assignee_id: data.assigneeId ?? null }),
+      ...(data.purpose !== undefined && { purpose: data.purpose ?? null }),
+      ...(data.estimatedMinutes !== undefined && { estimated_minutes: data.estimatedMinutes ?? null }),
     }).eq('id', id);
   };
 

@@ -22,6 +22,8 @@ export interface Task {
   updatedAt: string;
   archived: boolean;
   assigneeId?: string;
+  purpose?: string;
+  estimatedMinutes?: number;
 }
 
 export interface FilterState {

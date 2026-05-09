@@ -3,6 +3,7 @@ import { useTasks } from './hooks/useTasks';
 import { useMembers } from './hooks/useMembers';
 import { useAuth } from './hooks/useAuth';
 import { useDecompose } from './hooks/useDecompose';
+import { useAssignmentProposal } from './hooks/useAssignmentProposal';
 import { Dashboard } from './components/Dashboard';
 import { FilterBar } from './components/FilterBar';
 import { TaskList } from './components/TaskList';
@@ -12,9 +13,10 @@ import { LoginScreen } from './components/LoginScreen';
 import { InboxBar } from './components/InboxBar';
 import { DecomposePreview } from './components/DecomposePreview';
 import { PurposeDialog } from './components/PurposeDialog';
+import { AssignmentProposal } from './components/AssignmentProposal';
 import { filterAndSort, getAllTags } from './utils/taskUtils';
 import type { FilterState, Task } from './types/task';
-import { Plus, LogOut, Shield, Loader2 } from 'lucide-react';
+import { Plus, LogOut, Shield, Loader2, Sparkles } from 'lucide-react';
 import './index.css';
 
 const DEFAULT_FILTER: FilterState = {
@@ -33,9 +35,11 @@ export default function App() {
   const { members, loading: membersLoading, addMember, deleteMember, updateMember, getMember } = useMembers();
   const { currentMemberId, login, logout } = useAuth();
   const decompose = useDecompose();
+  const assignment = useAssignmentProposal(tasks, members, updateTask);
   const [filter, setFilter] = useState<FilterState>(DEFAULT_FILTER);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
+  const [proposalOpen, setProposalOpen] = useState(false);
 
   // Supabase からのデータ読み込み中
   if (membersLoading) {
@@ -147,6 +151,17 @@ export default function App() {
               />
             )}
 
+            {isAdmin && (
+              <button
+                onClick={() => { setProposalOpen(true); assignment.generate(); }}
+                className="flex items-center gap-1.5 px-3 py-2.5 bg-white border border-gray-100 text-violet-600 rounded-2xl text-sm font-medium shadow-sm hover:bg-violet-50 hover:border-violet-200 transition-all"
+                title="AI 振り分け提案"
+              >
+                <Sparkles size={15} />
+                <span className="hidden sm:inline">振り分け提案</span>
+              </button>
+            )}
+
             <button
               onClick={openCreate}
               className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-500 to-indigo-500 text-white rounded-2xl text-sm font-medium shadow-lg shadow-violet-200 hover:shadow-violet-300 hover:from-violet-600 hover:to-indigo-600 transition-all"
@@ -208,6 +223,17 @@ export default function App() {
         <PurposeDialog
           suggestions={decompose.result.purposeSuggestions}
           onConfirm={handlePurposeConfirm}
+        />
+      )}
+
+      {proposalOpen && (assignment.step === 'loading' || assignment.step === 'ready' || assignment.step === 'error') && (
+        <AssignmentProposal
+          step={assignment.step}
+          proposals={assignment.proposals}
+          members={members}
+          errorMessage={assignment.errorMessage}
+          onApprove={assignment.approve}
+          onClose={() => { setProposalOpen(false); assignment.reset(); }}
         />
       )}
 
